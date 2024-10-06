@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Consulta LexML via SRU</title>
+</head>
+<body>
+
+<h1>Consulta LexML</h1>
+
+<input type="text" id="busca" placeholder="Digite seus termos de busca">
+<button onclick="buscar()">Buscar</button>
+
+<div id="resultados"></div>
+
+<script>
+function buscar() {
+  var termos = document.getElementById("busca").value;
+  var query = termos.replace(/ /g, "+"); // Substitui espaços por "+"
+  var url = "https://www.lexml.gov.br/sru/consulta?operation=searchRetrieve&version=1.2&query=" + query + "&maximumRecords=20&recordSchema=lexml";
+
+  fetch(url)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(xml => {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(xml, "text/xml");
+
+      let resultadosHTML = "<ul>";
+      const records = xmlDoc.querySelectorAll("recordData");
+      records.forEach(record => {
+          const titulo = record.querySelector("title")?.textContent || "Título não encontrado";
+          const ementa = record.querySelector("description")?.textContent || "Ementa não encontrada";
+          resultadosHTML += `<li><h3>${titulo}</h3><p>${ementa}</p></li>`;
+      });
+      resultadosHTML += "</ul>";
+
+      document.getElementById("resultados").innerHTML = resultadosHTML;
+    })
+    .catch(error => {
+        document.getElementById("resultados").innerHTML = "<p>Erro na busca: " + error.message + "</p>";
+    });
+}
+</script>
+
+</body>
+</html>
